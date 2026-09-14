@@ -1,0 +1,18 @@
+services:
+  zaxcode-web:
+    build:
+      context: .
+      args:
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3000}
+        NEXT_PUBLIC_DASHBOARD_URL: ${NEXT_PUBLIC_DASHBOARD_URL:-http://localhost:97}
+        LARAVEL_API_BASE_URL: ${LARAVEL_API_BASE_URL:-http://localhost:97}
+    image: zaxcode-next:latest
+    container_name: zaxcode-next
+    restart: unless-stopped
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3000}
+      NEXT_PUBLIC_DASHBOARD_URL: ${NEXT_PUBLIC_DASHBOARD_URL:-http://localhost:97}
+      LARAVEL_API_BASE_URL: ${LARAVEL_API_BASE_URL:-http://localhost:97}
+      REVALIDATION_SECRET: ${REVALIDATION_SECRET:-}

@@ -1,69 +1,25 @@
-import Image from "next/image";
+import AboutSection from '@/components/home/AboutSection';
+import AdvantageSection from '@/components/home/AdvantageSection';
+import ClientStrip from '@/components/home/ClientStrip';
+import ContactSection from '@/components/home/ContactSection';
+import ExperienceStrip from '@/components/home/ExperienceStrip';
+import FaqSection from '@/components/home/FaqSection';
+import HeroSection from '@/components/home/HeroSection';
+import IndustriesSection from '@/components/home/IndustriesSection';
+import MarqueeStrip from '@/components/home/MarqueeStrip';
+import RecognitionSection from '@/components/home/RecognitionSection';
+import RevealOnScroll from '@/components/home/RevealOnScroll';
+import SelectedWorkSection from '@/components/home/SelectedWorkSection';
+import ServicesSection from '@/components/home/ServicesSection';
+import StatsSection from '@/components/home/StatsSection';
+import TestimonialsSection from '@/components/home/TestimonialsSection';
+import { pageMetadata, serializeJsonLd, siteUrl } from '@/lib/seo';
+
+export const metadata = pageMetadata({ title: 'Web Development & SaaS Company in Bangladesh', description: 'Zaxcode designs and develops fast websites, SaaS platforms, custom ERP systems, and business automation for companies in Bangladesh and worldwide.', path: '/' });
+
+const sections = [[ClientStrip, 'center'], [ExperienceStrip, 'center'], [RecognitionSection, 'center'], [ServicesSection, 'center'], [MarqueeStrip, 'from-left'], [SelectedWorkSection, 'from-right'], [AboutSection, 'center'], [StatsSection, 'from-left'], [TestimonialsSection, 'from-right'], [AdvantageSection, 'from-right'], [IndustriesSection, 'from-left'], [FaqSection, 'from-right'], [ContactSection, 'center']];
 
 export default function Home() {
-  return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.js
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
-  );
+  const schema = { '@context': 'https://schema.org', '@graph': [{ '@type': 'Organization', '@id': `${siteUrl}/#organization`, name: 'Zaxcode', url: siteUrl, logo: { '@type': 'ImageObject', url: `${siteUrl}/images/logo.png`, width: 349, height: 293 }, email: 'zabeer@zaxcode.com', areaServed: [{ '@type': 'Country', name: 'Bangladesh' }, 'Worldwide'], knowsAbout: ['Web development', 'SaaS development', 'ERP systems', 'UI/UX design', 'Business automation'] }, { '@type': 'WebSite', '@id': `${siteUrl}/#website`, url: siteUrl, name: 'Zaxcode', publisher: { '@id': `${siteUrl}/#organization` }, inLanguage: 'en' }] };
+  return <><script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(schema) }} /><HeroSection /><div className="relative z-20">{sections.map(([Component, variant], index) => <RevealOnScroll key={Component.name} variant={variant} delay={index * 70}><Component /></RevealOnScroll>)}</div></>;
 }

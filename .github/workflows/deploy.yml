@@ -1,0 +1,111 @@
+name: CI/CD
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-zaxcode-next
+  cancel-in-progress: false
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Install SSH password client
+        run: sudo apt-get update && sudo apt-get install -y sshpass
+
+      - name: Build and deploy on production VPS
+        env:
+          VPS_ROOT_ACCESS: ${{ secrets.VPS_ROOT_ACCESS }}
+          VPS_PASSWORD: ${{ secrets.VPS_PASSWORD }}
+          VPS_PROJECT_DIR: ${{ secrets.VPS_PROJECT_DIR }}
+          VPS_APP_CONTAINER: ${{ secrets.VPS_APP_CONTAINER }}
+        run: |
+          set -Eeuo pipefail
+
+          SSH_TARGET="${VPS_ROOT_ACCESS#ssh }"
+          export SSHPASS="$VPS_PASSWORD"
+
+          sshpass -e ssh \
+            -o StrictHostKeyChecking=accept-new \
+            "$SSH_TARGET" \
+            bash -se -- \
+            "$VPS_PROJECT_DIR" \
+            "$VPS_APP_CONTAINER" <<'REMOTE_SCRIPT'
+          set -Eeuo pipefail
+
+          PROJECT_DIR="$1"
+          APP_CONTAINER="$2"
+
+          cd "$PROJECT_DIR"
+          git fetch origin main
+          git checkout main
+
+          if ! git diff --quiet || ! git diff --cached --quiet; then
+            echo "The VPS repository has uncommitted changes; deployment stopped." >&2
+            git status --short >&2
+            exit 1
+          fi
+
+          git pull --ff-only origin main
+
+          if [ ! -f .env ]; then
+            echo "Production .env is missing in $PROJECT_DIR" >&2
+            exit 1
+          fi
+
+          read_env() {
+            sed -n "s/^$1=//p" .env | tail -n 1 | tr -d '\r' | sed -e 's/^"//' -e 's/"$//'
+          }
+
+          SITE_URL="$(read_env NEXT_PUBLIC_SITE_URL)"
+          DASHBOARD_URL="$(read_env NEXT_PUBLIC_DASHBOARD_URL)"
+          API_URL="$(read_env LARAVEL_API_BASE_URL)"
+
+          for value_name in SITE_URL DASHBOARD_URL API_URL; do
+            value="${!value_name}"
+            if [ -z "$value" ] || [[ "$value" == *localhost* ]]; then
+              echo "$value_name is missing or points to localhost in the production .env" >&2
+              exit 1
+            fi
+          done
+
+          docker compose build zaxcode-web
+
+          if ! docker run --rm \
+            --entrypoint sh \
+            -e EXPECTED_SITE_URL="$SITE_URL" \
+            -e EXPECTED_DASHBOARD_URL="$DASHBOARD_URL" \
+            zaxcode-next:latest \
+            -c 'grep -R -q -F "$EXPECTED_SITE_URL" /app/.next && grep -R -q -F "$EXPECTED_DASHBOARD_URL" /app/.next'; then
+            echo "Built image does not contain the production public URLs" >&2
+            exit 1
+          fi
+
+          docker compose up -d --force-recreate zaxcode-web
+
+          for attempt in $(seq 1 18); do
+            STATUS="$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "$APP_CONTAINER")"
+            if [ "$STATUS" = healthy ]; then
+              docker ps --filter "name=^/${APP_CONTAINER}$" --format 'deployed: {{.Names}} ({{.Status}})'
+              exit 0
+            fi
+            if [ "$STATUS" = unhealthy ] || [ "$STATUS" = exited ] || [ "$STATUS" = dead ]; then
+              docker logs --tail 100 "$APP_CONTAINER"
+              exit 1
+            fi
+            sleep 5
+          done
+
+          docker logs --tail 100 "$APP_CONTAINER"
+          echo "Container did not become healthy before the timeout" >&2
+          exit 1
+          REMOTE_SCRIPT
