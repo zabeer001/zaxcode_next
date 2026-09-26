@@ -2,17 +2,26 @@ services:
   zaxcode-web:
     build:
       context: .
+      extra_hosts:
+        - "host.docker.internal:host-gateway"
       args:
-        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3000}
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:1007}
         NEXT_PUBLIC_DASHBOARD_URL: ${NEXT_PUBLIC_DASHBOARD_URL:-http://localhost:97}
-        LARAVEL_API_BASE_URL: ${LARAVEL_API_BASE_URL:-http://localhost:97}
+        LARAVEL_API_BASE_URL: ${LARAVEL_API_BASE_URL:-http://host.docker.internal:97}
     image: zaxcode-next:latest
     container_name: zaxcode-next
     restart: unless-stopped
     ports:
-      - "${PORT:-3000}:3000"
+      - "${PORT:-1007}:3000"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
-      NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3000}
+      NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:1007}
       NEXT_PUBLIC_DASHBOARD_URL: ${NEXT_PUBLIC_DASHBOARD_URL:-http://localhost:97}
-      LARAVEL_API_BASE_URL: ${LARAVEL_API_BASE_URL:-http://localhost:97}
+      LARAVEL_API_BASE_URL: ${LARAVEL_API_BASE_URL:-http://host.docker.internal:97}
       REVALIDATION_SECRET: ${REVALIDATION_SECRET:-}
+
+networks:
+  default:
+    external: true
+    name: zaxcode_sail
